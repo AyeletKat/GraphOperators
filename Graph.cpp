@@ -3,7 +3,6 @@
 #include <sstream>
 // #include <vector>
 // #include <iostream>
-//sing namespace std; // there was no error but i added
 namespace ariel
 {
     Graph::Graph() : mat(), isDirected() {}
@@ -53,10 +52,6 @@ namespace ariel
                 }
             }
         }
-        // If undirected, divide by 2 to avoid double counting
-        // if (!directed) {
-        //    numEdges /= 2;
-        //}
         return numEdges;
     }
     void Graph::printGraph(){
@@ -75,17 +70,19 @@ namespace ariel
     }
 
     Graph Graph::operator+(const Graph& other) const {
-        if (mat.size() != other.mat.size() || (mat.size() > 0 && mat[0].size() != other.mat[0].size())) {//???second part?!......
+        if (mat.size() != other.mat.size() || (mat.size() > 0 && mat[0].size() != other.mat[0].size())) {
             throw runtime_error("Graphs must have the same dimensions to be added.");
         }
 
         vector<vector<int>> resultMat = mat;  // Start with a copy of the first graph's matrix
 
-        for (size_t i = 0; i < mat.size(); i++) {//changes both loops to i++ from ++i......
+        for (size_t i = 0; i < mat.size(); i++) {
             for (size_t j = 0; j < mat[i].size(); j++)
                 resultMat[i][j] += other.mat[i][j];
         }
-        return Graph(resultMat);
+        Graph g;
+        g.loadGraph(resultMat);
+        return g;
     }
 
     Graph Graph::operator-(const Graph& other) const {
@@ -99,7 +96,9 @@ namespace ariel
             for (size_t j = 0; j < mat[i].size(); j++)
                 resultMat[i][j] -= other.mat[i][j];
         }
-        return Graph(resultMat);
+        Graph g;
+        g.loadGraph(resultMat);
+        return g;
     }
 
     Graph Graph::operator-() const {//unary -
@@ -119,7 +118,6 @@ namespace ariel
         Graph g;
         g.loadGraph(mat);
         return g;
-        //return *this;
     }
 
     Graph Graph::operator+=(const Graph& other) {
@@ -178,13 +176,15 @@ namespace ariel
         return temp;
     }
 
-    Graph Graph::operator* (int a){//creates new graph whick is the base graph where all edges are multiplyed by an int
-        Graph g (*this);
-        for (auto& row : g.mat) {
+    Graph Graph::operator* (int a){//creates new graph which is the base graph where all edges are multiplyed by an int
+        vector<vector<int>> m = mat;
+        for (auto& row : m) {
             for (auto& val : row) {
                 val = val*a;
             }
         }
+        Graph g;
+        g.loadGraph(m);
         return g;
     }
 
