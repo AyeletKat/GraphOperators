@@ -2,14 +2,18 @@
 Email adress: ayeletk03@gmail.com
 ID: 325408409
 */
+
 #include "Algorithms.hpp"
 #include <unordered_set>//??
 #include <iostream>
 #include <stack>
+#include <queue>
 #include <limits>
+#include <sstream>
+#include <unordered_map>
 namespace ariel{
-        
-        ////////////////////////////////////////////////////////////////////////////////////:is connected:
+    
+    ////////////////////////////////////////////////////////////////////////////////////:is connected:
     void dfs(const vector<vector<int>>& graph, int vertex, vector<bool>& visited, stack<int>& stack) {
         visited[(unsigned int) vertex] = true;
         for (size_t i = 0; i < graph[(unsigned int) vertex].size(); ++i) {
@@ -41,7 +45,7 @@ namespace ariel{
     }
     //Kosaraju-Sharir's algorithm to check strong connectivity of a graph by SCC and transposing the graph +running on it second dfs.
     bool isStronglyConnected(const vector<vector<int>>& graph) {
-        unsigned int numVertices = graph.size();//CHANGED HERE TO UNSIGNED INT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        unsigned int numVertices = graph.size();
         vector<bool> visited(numVertices, false);
         stack<int> stack;
         
@@ -102,41 +106,60 @@ namespace ariel{
         }
         return true;
     }
-    
-    template <typename S> ostream& operator<<(ostream& os,const vector<S>& vector){// Printing all the elements of a vector usingo operator <<
-        for (auto element : vector) {
-            os << element << ", ";//chose separetor ", " as in the demo
-        }
-        return os;
-    }
 
-    int Algorithms::isBipartite(const Graph& g4){//prints two vertexs groups and returns 1 or prints and returns 0
-        vector<vector<int>> our_mat = g4.mat;
-        unsigned int V = our_mat.size();
-        int color[V];
-        for(unsigned int i=0;i<V;i++)
-            color[i] = -1;
-        unsigned int pos = 0; //start from vertex 0;
-        bool colorable = colorGraph(our_mat,color,pos,1);
-        vector<int> group1, group2;
+    string Algorithms::isBipartite(const Graph& g4) {
+    unsigned int n = g4.mat.size();
+    vector<int> colors(n, -1); // -1 indicates that the node is not yet colored
+    vector<int> group1, group2;
 
-        if(colorable==true){
-            for(size_t d=0; d<sizeof(color);d++){//go through all "color" and separate to the two groups, then print them.
-                if(color[d]==0) group1.push_back(color[d]);
-                else if(color[d]==1) group2.push_back(color[d]);
-                else {
-                    cerr << "color vector from bepartipe contains weird content" << endl;
-                    break;
+    for (int start = 0; start < n; ++start) {
+        if (colors[(unsigned int)start] == -1) { // Not yet colored
+            queue<int> q;
+            q.push(start);
+            colors[(unsigned int) start] = 0;
+            group1.push_back(start);
+
+            while (!q.empty()) {
+                int node = q.front();
+                q.pop();
+
+                for (int neighbor = 0; neighbor < n; ++neighbor) {
+                    if (g4.mat[(unsigned int)node][(unsigned int)neighbor] == 0) continue; // No edge between node and neighbor
+
+                    if (colors[(unsigned int)neighbor] == -1) { // If the neighbor is not colored
+                        colors[(unsigned int)neighbor] = 1 - colors[(unsigned int)node]; // Color with the opposite color
+                        q.push(neighbor);
+
+                        if (colors[(unsigned int)neighbor] == 0) {
+                            group1.push_back(neighbor);
+                        } else {
+                            group2.push_back(neighbor);
+                        }
+                    } else if (colors[(unsigned int)neighbor] == colors[(unsigned int)node]) {
+                        // If the neighbor has the same color as the current node, it's not bipartite
+                        return "0";
+                    }
                 }
             }
-            cout << "The graph is bipartite: A={" << group1 << "}, B={" << group2 << "}" << endl;
-            return 1;
-        }
-        else {
-            cout << "0. Graph isn't bipartite" << endl;
-            return 0;
         }
     }
+
+    // If we reach here, the graph is bipartite
+    stringstream result;
+    result << "The graph is bipartite. ";
+    result << "Group 1 = { ";
+    for (int vertex : group1) {
+        result << vertex << " ";
+    }
+
+    result << "}\nGroup 2 = { ";
+    for (int vertex : group2) {
+        result << vertex << " ";
+    }
+    result << "}";
+    return result.str();
+}
+
     //////////////////////////////////////////////////////////////////////////////////////:bellman ford, SP, negative cycle.
     struct Edge {
         int source, destination, weight;
@@ -179,7 +202,7 @@ namespace ariel{
         return distance;
     }
 /////////////////////
-    int Algorithms::shortestPath(const Graph& g2, const int start, const int end){
+    string Algorithms::shortestPath(const Graph& g2, const int start, const int end){
         int V = g2.mat.size();
         vector<Edge> negativeCycle;
         vector <int> parents;
@@ -191,29 +214,34 @@ namespace ariel{
         }
 
         vector<int> distances = bellmanFord((unsigned int)V, (unsigned int)start, negativeCycle, edges, parents);
-        if(distances[(unsigned int)end]==numeric_limits<int>::max()) return -1;//is ==operator working???
+        string result = "-1"; 
+        if(distances[(unsigned int)end]==numeric_limits<int>::max()) return result;//is ==operator working???
         if (!negativeCycle.empty()) {
-          return -1;
+          return result; // Negative cycle detected
         } 
         else {
-        int dis = distances[(unsigned int)end];
-        cout << "Shortest path weight: " << distances[(unsigned int)end] << ". Path: ";
-        // Reconstruct path from end to start
-        vector<int> path;
-        int current = end;
-        while (current != start) {
-            path.push_back(current);
-            current = parents[(unsigned int)current];
-        }
-        path.push_back(start);
-        // Print path in reverse order
-        for (int i = path.size() - 1; i > 0; --i) {
-            cout << path[(unsigned int)i] << "->";
-        }
-        cout << path[0]<<endl;
+            int dis = distances[(unsigned int)end];
+            cout << "Shortest path weight: " << distances[(unsigned int)end] << ". Path: ";
+            // Reconstruct path from end to start
+            vector<int> path;
+            int current = end;
+            while (current != start) {
+                path.push_back(current);
+                current = parents[(unsigned int)current];
+            }
+            path.push_back(start);
+            // Print path in reverse order
+            string my_path;
+            for (int i = path.size() - 1; i > 0; --i) {
+                //cout << path[(unsigned int)i] << "->";
+                my_path += to_string(path[(unsigned int)i]) + "->";
+            }
+            // cout << path[0]<<endl;
+            my_path += to_string(path[0]);
+            result = my_path;
         }
 
-        return 1;/////////////just for return
+        return result;/////////////just for return
     }//returns the SP or vertices or -1.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     int Algorithms::negativeCycle(const Graph& g5){//in helper function have an array or vector to return the actual cycle
@@ -235,50 +263,73 @@ namespace ariel{
                     }
                    return 1;//SUCCESS, NS FOUND 
                 } 
-
             }
         }
         cout << "No negative cycle detected." << endl;
         return -1;
     }
 
-    bool hasCycleDFS(const vector<vector<int>>& adjMatrix, unsigned int V, unsigned int v, vector<bool>& visited, vector<int>& parent) {
-    visited[v] = true;
+//forward declaration to avoid errors
+string isContainsCycleDFS(const Graph& g, size_t src, vector<int>& colors, vector<int>& parents, vector<int>& path);
+string constructCyclePath(const vector<int>& path, int start);
 
-    // Recursive DFS for all adjacent vertices
-    for (unsigned int i = 0; i < V; ++i) {
-        if (adjMatrix[v][i] != 0) {
-            if (!visited[i]) {
-                parent[i] = (int)v;
-                if (hasCycleDFS(adjMatrix, V, i, visited, parent)) {
-                    return true;
-                }
-            } else if (parent[v] != (int)i) { 
-                // Check if it forms a cycle other than the parent-child relationship
-                return true;
+string Algorithms::isContainsCycle(const Graph& g) {
+    vector<int> colors(g.mat.size(), 0);
+    vector<int> parents(g.mat.size(), -1);
+    vector<int> path;
+
+    for (size_t i = 0; i < g.mat.size(); i++) {
+        if (colors[i] == 0) {
+            string cycle = isContainsCycleDFS(g, i, colors, parents, path);
+            if (!cycle.empty()) {
+                return cycle;
             }
         }
     }
-    return false;
+    return "-1";
 }
 
-int Algorithms::isContainsCycle(const Graph &g) {
-    vector<vector<int>> adjMatrix = g.mat;
-    unsigned int V = adjMatrix.size();
-    vector<bool> visited(V, false);
-    vector<int> parent(V, -1);
+    
+string isContainsCycleDFS(const Graph& g, size_t src, vector<int>& colors, vector<int>& parents, vector<int>& path) {
+    colors[src] = 1;//1 as grey, visited
+    path.push_back(src);  // add the vertex to the path
 
-    // Check for cycle from each vertex
-    for (unsigned int i = 0; i < V; ++i) {
-        if (!visited[i] && hasCycleDFS(adjMatrix, V, i, visited, parent)) {
-            cout << "Cycle detected!" << endl;
-            return 1;
+    for (size_t v = 0; v < g.mat.size(); v++) {
+        if(g.mat[src][v] != 0){
+            if (colors[v] == 0) {//0 as whute, unvisited
+                parents[v] = static_cast<int>(src);
+                string cycle = isContainsCycleDFS(g, v, colors, parents, path);
+                if (!cycle.empty()) {
+                    return cycle;
+                }
+            } else if (colors[v] == 1) {// 1 as grey, visited
+                if (!g.isDirected && parents[src] == v) {
+                    continue;
+                }
+                return constructCyclePath(path, v);
+            }
         }
     }
-    cout << "No cycle detected." << endl;
-    return 0;
+
+    colors[src] = 2;//mark as visited, as black, here 2
+    path.pop_back();
+    return "";
 }
 
+string constructCyclePath(const vector<int>& path, int start) {
+    string cycle;
+    size_t v = 0;
+    for (v = 0; v < path.size(); v++) {
+        if (path[v] == start) {
+            break;
+        }
+    }
+    for (size_t i = v; i < path.size(); i++) {
+        cycle += std::to_string(path[i]) + "->";
+    }
+    // Add the starting vertex to close the cycle
+    cycle += std::to_string(start);
+    return cycle;
 }
-
+}
 
